@@ -1,17 +1,34 @@
-# nihelbusinesscard
+# 📇 Carte de visite Flutter — #30DaysFlutter (Jour 1)
 
-A new Flutter project.
+Mini-app **Business Card** réalisée pour mon challenge **#30DaysFlutter**.  
+Elle affiche une photo de profil, le nom, le rôle, des actions **Appeler** / **E-mail** et des liens vers **GitHub**, **LinkedIn** et **Instagram**.
 
-## Getting Started
+<p align="left">
+ <img width="389" height="895" alt="image" src="https://github.com/user-attachments/assets/0e1cc308-f769-4f3a-95ea-8481b3497ee7" />
+</p>
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## ✨ Fonctionnalités
+- Avatar circulaire (photo de profil)
+- Nom + sous-titre (métier)
+- Boutons **Téléphone** et **E-mail**
+- Icônes sociales (GitHub / LinkedIn / Instagram)
+- Mise en page simple, responsive et personnalisable (Android & iOS)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-"# challenge30DaysFlutter" 
+## 🚀 Démarrage
+
+```bash
+# 1) Cloner
+git clone  https://github.com/nihel-sliti/challenge30DaysFlutter.git
+cd <ton-repo>
+
+# 2) Dépendances
+flutter pub get
+
+# 3) Lancer
+flutter run
+
+
