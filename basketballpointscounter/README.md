@@ -1,5 +1,5 @@
 # 🏀 Basketball Points Counter  
-**Day 1 – #30DaysFlutter Challenge**
+**Day 2 – #30DaysFlutter Challenge**
 
 Une application Flutter simple qui permet de compter les points de deux équipes de basket.  
 Projet du jour 1 dans le cadre du challenge **#30DaysFlutter**.
