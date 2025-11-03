@@ -1,16 +1,42 @@
-# basketballpointscounter
+# 🏀 Basketball Points Counter  
+**Day 1 – #30DaysFlutter Challenge**
 
-A new Flutter project.
+Une application Flutter simple qui permet de compter les points de deux équipes de basket.  
+Projet du jour 1 dans le cadre du challenge **#30DaysFlutter**.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🎯 Objectifs du projet
 
-A few resources to get you started if this is your first Flutter project:
+- Gérer les scores de deux équipes (Team A & Team B)
+- Ajouter 1, 2 ou 3 points
+- Remettre les scores à zéro
+- Comprendre l’utilisation de `StatefulWidget` et `setState()`
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠️ Technologies & Concepts Utilisés
+
+| Concept / Widget | Description |
+|------------------|-------------|
+| `StatefulWidget` | Gestion de l'état |
+| `setState()` | Mise à jour de l'interface |
+| `ElevatedButton` | Boutons d'action |
+| `VerticalDivider` | Séparation visuelle |
+| `Row` & `Column` | Organisation du layout |
+| `Text` | Affichage des labels et scores |
+
+---
+
+## 📸 Aperçu
+
+<img width="379" height="821" alt="image" src="https://github.com/user-attachments/assets/14cdfc95-1774-4030-9404-10de7f363311" />
+
+
+---
+
+## 🚀 Installation & Exécution
+
+```bash
+flutter pub get
+flutter run
