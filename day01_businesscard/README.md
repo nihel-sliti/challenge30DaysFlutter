@@ -2,10 +2,8 @@
 
 Mini-app **Business Card** réalisée pour mon challenge **#30DaysFlutter**.  
 Elle affiche une photo de profil, le nom, le rôle, des actions **Appeler** / **E-mail** et des liens vers **GitHub**, **LinkedIn** et **Instagram**.
+<img width="379" height="899" alt="image" src="https://github.com/user-attachments/assets/a7a92219-2244-422d-a259-6256edef9d76" />
 
-<p align="left">
-  <img src="screenshots/preview.png" alt="Aperçu" width="320"/>
-</p>
 
 ---
 
