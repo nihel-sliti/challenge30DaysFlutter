@@ -1,7 +1,7 @@
 # 🚀 Challenge Flutter — 30 Jours pour Apprendre Flutter avec des Mini-Projets
 
 Bienvenue 👋  
-Je suis **Nihel**, et ceci est mon challenge **30 jours Flutter** où je construis chaque jour un mini-projet pour apprendre Flutter étape par étape 🧠💙
+Je suis **Nihel**, et ceci est mon challenge **30 jours Flutter** où je construis chaque jour un mini-projet pour que ma comunité sur Tiktok et instagram  apprendre Flutter étape par étape dés le debut.
 
 🎯 Objectif :  
 Apprendre Flutter **en pratiquant** et créer à la fin une **mini-formation complète** accessible gratuitement pour tous ceux qui veulent débuter dans le développement mobile.
@@ -22,7 +22,7 @@ Au fil de ce challenge, tu vas apprendre :
 - Animations & transitions
 - Bonnes pratiques et architecture propre
 
-Chaque jour = un projet pratique → un niveau de plus 💪
+Chaque jour = un projet pratique → un niveau de plus 
 
 ---
 
@@ -53,7 +53,7 @@ Chaque jour = un projet pratique → un niveau de plus 💪
 
 ---
 
-## 🎯 Objectif final
+##  Objectif final
 
 À la fin tu seras capable de :
 
@@ -68,13 +68,13 @@ Ce dépôt deviendra une **formation Flutter gratuite** créée jour après jour
 
 ---
 
-## 🌟 Suis le challenge & soutiens
+##  Suis le challenge & soutiens
 
 Si ce projet t’aide :  
 
 ⭐ Mets une **star** sur le repo  
 🔔 Abonne-toi pour suivre la suite  
-📲 Retrouvez-moi sur mes réseaux (à ajouter)
+📲 Retrouvez-moi sur mes réseaux 
 
 > Ensemble on apprend, on construit, on avance 💙🚀
 
