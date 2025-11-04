@@ -1,34 +1,83 @@
-# 📇 Carte de visite Flutter — #30DaysFlutter (Jour 1)
+# 🚀 Challenge Flutter — 30 Jours pour Apprendre Flutter avec des Mini-Projets
 
-Mini-app **Business Card** réalisée pour mon challenge **#30DaysFlutter**.  
-Elle affiche une photo de profil, le nom, le rôle, des actions **Appeler** / **E-mail** et des liens vers **GitHub**, **LinkedIn** et **Instagram**.
+Bienvenue 👋  
+Je suis **Nihel**, et ceci est mon challenge **30 jours Flutter** où je construis chaque jour un mini-projet pour apprendre Flutter étape par étape 🧠💙
 
-<p align="left">
- <img width="389" height="895" alt="image" src="https://github.com/user-attachments/assets/0e1cc308-f769-4f3a-95ea-8481b3497ee7" />
-</p>
-
----
-
-## ✨ Fonctionnalités
-- Avatar circulaire (photo de profil)
-- Nom + sous-titre (métier)
-- Boutons **Téléphone** et **E-mail**
-- Icônes sociales (GitHub / LinkedIn / Instagram)
-- Mise en page simple, responsive et personnalisable (Android & iOS)
+🎯 Objectif :  
+Apprendre Flutter **en pratiquant** et créer à la fin une **mini-formation complète** accessible gratuitement pour tous ceux qui veulent débuter dans le développement mobile.
 
 ---
 
-## 🚀 Démarrage
+## ✅ Ce que tu vas apprendre
 
-```bash
-# 1) Cloner
-git clone  https://github.com/nihel-sliti/challenge30DaysFlutter.git
-cd <ton-repo>
+Au fil de ce challenge, tu vas apprendre :
 
-# 2) Dépendances
-flutter pub get
+- Les bases de Flutter & Dart
+- Widgets essentiels + design mobile
+- Gestion d'état : `setState`, puis Provider & BLoC
+- Navigation & routage
+- UI/UX mobile moderne
+- Consommation d'API
+- Firebase (Auth, Database, Notifications…)
+- Animations & transitions
+- Bonnes pratiques et architecture propre
 
-# 3) Lancer
-flutter run
+Chaque jour = un projet pratique → un niveau de plus 💪
+
+---
+
+## 🗓️ Programme — 30 jours de projets
+
+| Jour | Projet / Concept |
+|------|------------------|
+| Day 01 | Carte de visite (UI Flutter) |
+| Day 02 | Compteur de points Basketball |
 
 
+📎 Chaque dossier contient :
+- Code source
+- Screenshots (si possible)
+- Explications simples
+
+---
+
+## 🧠 Méthode d'apprentissage
+
+1️⃣ Cloner ce repo  
+2️⃣ Choisir le dossier du jour  
+3️⃣ Lire le code + exécuter  
+4️⃣ Modifier, tester, essayer 💡  
+5️⃣ Faire un commit du jour ✅
+
+> **Apprends en faisant.** Chaque petit projet ➜ un vrai progrès.
+
+---
+
+## 🎯 Objectif final
+
+À la fin tu seras capable de :
+
+✅ Construire une app Flutter complète  
+✅ Comprendre les bases UI + State Management  
+✅ Travailler avec Firebase  
+✅ Manipuler les API  
+✅ Construire un portfolio solide  
+✅ Postuler à un poste **Flutter Junior Developer**  
+
+Ce dépôt deviendra une **formation Flutter gratuite** créée jour après jour 📚🔥
+
+---
+
+## 🌟 Suis le challenge & soutiens
+
+Si ce projet t’aide :  
+
+⭐ Mets une **star** sur le repo  
+🔔 Abonne-toi pour suivre la suite  
+📲 Retrouvez-moi sur mes réseaux (à ajouter)
+
+> Ensemble on apprend, on construit, on avance 💙🚀
+
+---
+
+✨ *Let’s Flutter & Build the Future Together!* ✨
