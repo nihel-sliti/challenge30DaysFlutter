@@ -30,7 +30,7 @@ Elle affiche une photo de profil, le nom, le rôle, des actions **Appeler** / **
 
 ```bash
 # 1) Cloner
-git clone https://github.com/<ton-user>/<ton-repo>.git
+git clone https://github.com/nihel-sliti/challenge30DaysFlutter.git
 cd <ton-repo>
 
 # 2) Dépendances
