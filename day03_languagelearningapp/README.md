@@ -1,16 +1,24 @@
 # day03_languagelearningapp
 
 A new Flutter project.
+#  Toku — Flutter ListView.builder + Models + Components + Navigation
 
-## Getting Started
+Mini-app d’apprentissage avec 4 catégories (**Numbers, Colors, Family, Phrases**).  
+Objectif pédagogique : **`ListView.builder`**, **modèles (models)**, **widgets réutilisables (components)** et **navigation entre écrans**.
+<p>
+<img width="385" height="901" alt="image" src="https://github.com/user-attachments/assets/6adb50b3-b4ad-403b-9f84-c5a00323762a" />
+</p>
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+##  Points clés
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **HomeScreen** avec 4 tuiles de catégories
+- **Navigation** vers un **CategoryScreen** par `Navigator.push` 
+- **ListView.builder** pour générer les items
+- **Models** : `CategoryModel`, `ItemModel`
+- **Components** réutilisables : `CategoryTile`, `ItemTile`
+- Données chargées depuis fichiers locaux
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
