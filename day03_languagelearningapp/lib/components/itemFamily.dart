@@ -1,32 +1,33 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:day03_languagelearningapp/components/soundButton.dart';
+import 'package:day03_languagelearningapp/models/family.dart';
 import 'package:day03_languagelearningapp/models/numbers.dart';
 import 'package:flutter/material.dart';
 
-class item extends StatelessWidget {
-  item({
-    required this.number,
+class itemFamily extends StatelessWidget {
+  itemFamily({
+    required this.familyNumbers,
   });
-  final Numbers number;
+  final FamilyNumbers familyNumbers;
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 64,
-      color: Colors.orange,
+      color: Colors.purple,
       child: Row(
         children: [
-          Image.asset(number.image),
+          Image.asset(familyNumbers.image),
           Padding(
             padding: const EdgeInsets.only(left: 16),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  number.nameJapanese,
+                  familyNumbers.nameJapanese,
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 Text(
-                  number.nameEnglish,
+                  familyNumbers.nameEnglish,
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
@@ -35,7 +36,7 @@ class item extends StatelessWidget {
           Spacer(
             flex: 1,
           ),
-          SoundButton(pathSound: number.path),
+          SoundButton(pathSound: familyNumbers.path),
         ],
       ),
     );

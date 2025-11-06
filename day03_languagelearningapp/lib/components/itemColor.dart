@@ -1,13 +1,14 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:day03_languagelearningapp/components/soundButton.dart';
+import 'package:day03_languagelearningapp/models/colors.dart';
 import 'package:day03_languagelearningapp/models/numbers.dart';
 import 'package:flutter/material.dart';
 
-class item extends StatelessWidget {
-  item({
-    required this.number,
+class itemColors extends StatelessWidget {
+  itemColors({
+    required this.colorsModel,
   });
-  final Numbers number;
+  final ColorsModel colorsModel;
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -15,18 +16,18 @@ class item extends StatelessWidget {
       color: Colors.orange,
       child: Row(
         children: [
-          Image.asset(number.image),
+          Image.asset(colorsModel.image),
           Padding(
             padding: const EdgeInsets.only(left: 16),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  number.nameJapanese,
+                  colorsModel.nameJapanese,
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
                 Text(
-                  number.nameEnglish,
+                  colorsModel.nameEnglish,
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
@@ -35,7 +36,7 @@ class item extends StatelessWidget {
           Spacer(
             flex: 1,
           ),
-          SoundButton(pathSound: number.path),
+          SoundButton(pathSound: colorsModel.path),
         ],
       ),
     );

@@ -53,7 +53,7 @@ class Homepage extends StatelessWidget {
                 onTap: () {
                   Navigator.push(context,
                       MaterialPageRoute(builder: (BuildContext context) {
-                    return Phrases();
+                    return PhrasesPage();
                   }));
                 }),
           ],
