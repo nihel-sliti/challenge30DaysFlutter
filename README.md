@@ -32,7 +32,7 @@ Chaque jour = un projet pratique → un niveau de plus
 |------|------------------|
 | Day 01 | Carte de visite (UI Flutter) |
 | Day 02 | Compteur de points Basketball |
-
+| Day 03 | Language Learning |
 
 📎 Chaque dossier contient :
 - Code source
