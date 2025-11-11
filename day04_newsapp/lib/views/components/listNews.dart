@@ -13,26 +13,45 @@ class Listnews extends StatefulWidget {
 
 class _ListnewsState extends State<Listnews> {
   List<NewsModel> articles = [];
+  bool isLoading = true;
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     getGenralNews();
   }
 
   Future<void> getGenralNews() async {
     articles = await Newsservice(Dio()).getNews();
+    isLoading = false;
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     //  Newsservice(Dio()).getNews();//function fi west build bech trazen application w fi kol mara bch ya3mlha build donc fama methode esmha init state
-    return SliverList(
-      delegate: SliverChildBuilderDelegate(childCount: articles.length,
-          (context, index) {
-        return Item(newsModel: articles[index]);
-      }),
-    );
-    //lazy chargement
+    return FutureBuilder(
+        future: Newsservice(Dio()).getNews(),
+        builder: (context, Snapshot) {
+          if (Snapshot.hasData) {
+            return SliverList(
+              delegate: SliverChildBuilderDelegate(childCount: articles.length,
+                  (context, index) {
+                return Item(newsModel: articles[index]);
+              }),
+            );
+          } else if (Snapshot.hasError) {
+            return const SliverToBoxAdapter(
+              child: Text('oops there was an error, try later'),
+            );
+          } else {
+            return const SliverToBoxAdapter(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+        }
+        //lazy chargement
+        );
   }
 }
