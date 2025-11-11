@@ -1,5 +1,6 @@
 import 'package:day04_newsapp/views/components/category.dart';
 import 'package:day04_newsapp/views/components/item.dart';
+import 'package:day04_newsapp/views/components/listNews.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -15,6 +16,7 @@ class homeView extends StatelessWidget {
     Category(
         imagePath: 'assets/images/GeneralNews.jpg', nameCategory: 'Bourse'),
   ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,11 +64,7 @@ class homeView extends StatelessWidget {
                   height: 32,
                 ),
               ),
-              SliverList(
-                  delegate: SliverChildBuilderDelegate(childCount: 10,
-                      (context, index) {
-                return Item();
-              })), //lazy chargement
+              Listnews(),
             ],
           )),
     );

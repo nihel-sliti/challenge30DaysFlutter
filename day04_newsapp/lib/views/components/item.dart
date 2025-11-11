@@ -1,8 +1,9 @@
+import 'package:day04_newsapp/model/news_model.dart';
 import 'package:flutter/material.dart';
 
 class Item extends StatelessWidget {
-  const Item({super.key});
-
+  Item({super.key, required this.newsModel});
+  NewsModel newsModel;
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -14,15 +15,17 @@ class Item extends StatelessWidget {
           width: double.infinity,
           clipBehavior: Clip.antiAlias, // pour respecter le borderRadius
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            image: const DecorationImage(
-              image: AssetImage('assets/images/GeneralNews.jpg'),
-              fit: BoxFit.cover,
-            ),
-          ),
+              borderRadius: BorderRadius.circular(16),
+              image: DecorationImage(
+                image: NetworkImage(
+                  newsModel.image ??
+                      'https://via.placeholder.com/600x400?text=No+Image',
+                ),
+                fit: BoxFit.cover,
+              )),
         ),
-        const Text(
-          'tilte of news',
+        Text(
+          newsModel.title,
           maxLines: 2,
           textAlign: TextAlign.start,
           overflow: TextOverflow.ellipsis,
@@ -32,8 +35,8 @@ class Item extends StatelessWidget {
         SizedBox(
           height: 2,
         ),
-        const Text(
-          'description of news',
+        Text(
+          newsModel.subTitle!,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.start,
