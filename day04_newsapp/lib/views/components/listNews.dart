@@ -13,24 +13,18 @@ class Listnews extends StatefulWidget {
 
 class _ListnewsState extends State<Listnews> {
   List<NewsModel> articles = [];
-  bool isLoading = true;
+  var future;
   @override
   void initState() {
     super.initState();
-    getGenralNews();
-  }
-
-  Future<void> getGenralNews() async {
-    articles = await Newsservice(Dio()).getNews();
-    isLoading = false;
-    setState(() {});
+    future = Newsservice(Dio()).getNews();
   }
 
   @override
   Widget build(BuildContext context) {
     //  Newsservice(Dio()).getNews();//function fi west build bech trazen application w fi kol mara bch ya3mlha build donc fama methode esmha init state
     return FutureBuilder(
-        future: Newsservice(Dio()).getNews(),
+        future: future,
         builder: (context, Snapshot) {
           if (Snapshot.hasData) {
             return SliverList(

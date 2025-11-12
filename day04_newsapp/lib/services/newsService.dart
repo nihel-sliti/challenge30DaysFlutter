@@ -12,14 +12,9 @@ class Newsservice {
     List<NewsModel> newsList = [];
     //list of map to list of object
     for (var article in articles) {
-      NewsModel newsModel = NewsModel(
-        image: article['urlToImage'],
-        title: article['title'],
-        subTitle: article['description'],
-      );
+      NewsModel newsModel = NewsModel.fromJson(article);
       newsList.add(newsModel);
     }
-    print(newsList);
     return newsList;
   }
 }
