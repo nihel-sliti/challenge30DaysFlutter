@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:day05_storeap/models/product_model.dart';
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 
 class ProductService {
   final Dio dio;
@@ -23,6 +25,33 @@ class ProductService {
       print('API Error: $e');
       // Fallback to mock data if API fails
       return _getMockProducts();
+    }
+  }
+
+  Future<dynamic> addProduct({
+    required String url,
+    required dynamic body,
+    String? token,
+  }) async {
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+    };
+    if (token != null) {
+      headers.addAll({
+        'Authorization': 'Bearer $token',
+      });
+    }
+
+    http.Response response = await http.post(
+      Uri.parse(url),
+      body: jsonEncode(body),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return response.body;
+    } else {
+      throw Exception('Failed to add product: ${response.statusCode}');
     }
   }
 

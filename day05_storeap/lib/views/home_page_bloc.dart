@@ -6,6 +6,7 @@ import '../bloc/product_bloc.dart';
 import '../bloc/product_event.dart';
 import '../bloc/product_state.dart';
 import '../models/product_model.dart';
+import 'add_product_page.dart';
 
 class HomePageBloc extends StatelessWidget {
   const HomePageBloc({super.key});
@@ -29,11 +30,16 @@ class HomeView extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(
-              FontAwesomeIcons.cartPlus,
+              Icons.add,
               color: Colors.black,
             ),
             onPressed: () {
-              // TODO: Implement cart functionality
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddProductPage(),
+                ),
+              );
             },
           ),
         ],
