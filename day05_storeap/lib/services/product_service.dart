@@ -9,7 +9,7 @@ class ProductService {
     List<dynamic> product = response.data;
     List<ProductModel> productList = [];
     for (int i = 0; i < product.length; i++) {
-      productList.add(ProductModel.FormJson(product[i]));
+      productList.add(ProductModel.fromJson(product[i]));
     }
     return productList;
   }
