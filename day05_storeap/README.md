@@ -48,19 +48,6 @@ L’app consomme une **API publique** (Fake Store / collection Postman) pour :
 
 L’application suit une approche **Clean Architecture + BLoC**.
 
-### Couches principales
-
-- **presentation/**
-  - Écrans (`ProductListPage`, `AddProductPage`)
-  - Widgets UI (`ProductCard`, etc.)
-  - `ProductBloc`, `ProductEvent`, `ProductState`
-- **data/**
-  - `ProductModel` (mapping JSON ↔ Dart)
-  - `ProductService` (appel HTTP à l’API publique)
-  - Repository d’implémentation
-- **domain/** (optionnel selon ton projet)
-  - Entités & use cases (`GetAllProducts`, `AddProduct`)
-
 ### BLoC
 
 - `ProductEvent`
@@ -81,3 +68,20 @@ BlocBuilder<ProductBloc, ProductState>(
   },
 );
 
+La grille utilise :
+```dart
+
+ child: GridView.builder(
+                padding: const EdgeInsets.all(8),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.70,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                ),
+                itemCount: state.products.length,
+                itemBuilder: (context, index) {
+                  final product = state.products[index];
+                  return ProductCard(product: product);
+                },
+              ),
