@@ -68,9 +68,6 @@ BlocBuilder<ProductBloc, ProductState>(
   },
 );
 
-La grille utilise :
-```dart
-
  child: GridView.builder(
                 padding: const EdgeInsets.all(8),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
