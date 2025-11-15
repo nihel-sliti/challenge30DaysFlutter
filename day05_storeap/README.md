@@ -16,11 +16,7 @@ L’app consomme une **API publique** (Fake Store / collection Postman) pour :
 
 | Liste des produits | Ajout d’un produit |
 | ------------------ | ------------------ |
-| ![Product Grid]<img width="383" height="862" alt="image" src="https://github.com/user-attachments/assets/af4b7007-290e-400e-b851-1054d8cea40a" />
- | ![Add Product]<img width="377" height="833" alt="image" src="https://github.com/user-attachments/assets/610e810e-cb79-4ff4-a180-32db8def4172" />
- |
-
-*(Remplacer par tes propres captures d’écran dans `screenshots/`)*
+|<img width="383" height="862" alt="image" src="https://github.com/user-attachments/assets/af4b7007-290e-400e-b851-1054d8cea40a" />|<img width="377" height="833" alt="image" src="https://github.com/user-attachments/assets/610e810e-cb79-4ff4-a180-32db8def4172" /> |
 
 ---
 
