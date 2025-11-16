@@ -5,7 +5,7 @@ class ProductModel {
   final String description;
   final String category;
   final String image;
-  final Rating rating; // ⬅️ plus de ?
+  final Rating rating; //  plus de ?
 
   ProductModel({
     required this.id,
