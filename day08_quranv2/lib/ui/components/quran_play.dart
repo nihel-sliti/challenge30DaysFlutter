@@ -185,93 +185,333 @@ class _QuranPlayState extends State<QuranPlay> {
     final maxSec = _duration.inSeconds > 0 ? _duration.inSeconds : 1;
     final current = _position.inSeconds.clamp(0, maxSec).toDouble();
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (_error != null)
-          Text(
-            _error!,
-            style: TextStyle(color: Colors.red, fontSize: 12),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.surface,
+            theme.colorScheme.surface.withOpacity(0.95),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.15),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withOpacity(0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
-
-        // SLIDER
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  activeTrackColor: primary,
-                  inactiveTrackColor: isDark ? Colors.white12 : Colors.black12,
-                  thumbColor: primary,
-                ),
-                child: Slider(
-                  min: 0,
-                  max: maxSec.toDouble(),
-                  value: current,
-                  onChanged: _loading
-                      ? null
-                      : (v) => _player.seek(Duration(seconds: v.toInt())),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Message d'erreur amélioré
+          if (_error != null)
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.red.withOpacity(0.2),
+                  width: 1.5,
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Row(
                 children: [
-                  Text(_fmt(_position),
-                      style: TextStyle(color: theme.colorScheme.onSurface)),
-                  Text(_fmt(_duration),
-                      style: TextStyle(color: theme.colorScheme.onSurface)),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.error_outline,
+                      color: Colors.red.shade600,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _error!,
+                      style: TextStyle(
+                        color: Colors.red.shade700,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 ],
+              ),
+            ),
+
+          // Section du slider avec design amélioré
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: theme.colorScheme.outline.withOpacity(0.08),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                // Slider avec thumb personnalisé
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    activeTrackColor: primary,
+                    inactiveTrackColor: isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.black.withOpacity(0.1),
+                    thumbColor: primary,
+                    overlayColor: primary.withOpacity(0.15),
+                    trackHeight: 8,
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 10,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 16,
+                    ),
+                  ),
+                  child: Slider(
+                    min: 0,
+                    max: maxSec.toDouble(),
+                    value: current,
+                    onChanged: _loading
+                        ? null
+                        : (v) => _player.seek(Duration(seconds: v.toInt())),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Temps avec design amélioré
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            primary.withOpacity(0.15),
+                            primary.withOpacity(0.05),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _fmt(_position),
+                        style: TextStyle(
+                          color: primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            theme.colorScheme.secondary.withOpacity(0.15),
+                            theme.colorScheme.secondary.withOpacity(0.05),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _fmt(_duration),
+                        style: TextStyle(
+                          color: theme.colorScheme.secondary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Contrôles avec design premium
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Bouton Loop
+              _buildControlButton(
+                icon: Icons.repeat,
+                color: loopColor,
+                isActive: _loopEnabled,
+                backgroundColor: _loopEnabled
+                    ? primary.withOpacity(0.15)
+                    : Colors.transparent,
+                onPressed: () {
+                  setState(() => _loopEnabled = !_loopEnabled);
+                },
+                tooltip: "Loop infini",
+                size: 44,
+              ),
+
+              // Bouton Replay
+              _buildControlButton(
+                icon: Icons.replay,
+                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                onPressed: _loading ? null : _replay,
+                tooltip: "Rejouer",
+                size: 44,
+              ),
+
+              // Bouton -15s
+              _buildControlButton(
+                icon: Icons.replay_10,
+                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                onPressed: _loading ? null : () => _skip(-15),
+                tooltip: "Reculer 15s",
+                size: 44,
+              ),
+
+              // Bouton Play/Pause agrandi et amélioré
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      primary,
+                      primary.withOpacity(0.85),
+                      primary.withOpacity(0.7),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primary.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                    if (_isPlaying)
+                      BoxShadow(
+                        color: primary.withOpacity(0.2),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                      ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: _loading ? null : _togglePlay,
+                    child: Center(
+                      child: _loading
+                          ? SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3.5,
+                                color: Colors.white,
+                              ),
+                            )
+                          : AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              child: Icon(
+                                _isPlaying
+                                    ? Icons.pause_circle_filled
+                                    : Icons.play_circle_fill,
+                                color: Colors.white,
+                                size: 36,
+                              ),
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Bouton +15s
+              _buildControlButton(
+                icon: Icons.forward_10,
+                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                onPressed: _loading ? null : () => _skip(15),
+                tooltip: "Avancer 15s",
+                size: 44,
               ),
             ],
           ),
-        ),
+        ],
+      ),
+    );
+  }
 
-        if (_loading)
-          const Padding(
-            padding: EdgeInsets.all(8),
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-
-        // BOUTONS
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            // LOOP
-            IconButton(
-              icon: Icon(Icons.repeat, color: loopColor, size: 28),
-              onPressed: () {
-                setState(() => _loopEnabled = !_loopEnabled);
-              },
-              tooltip: "Loop infini",
-            ),
-
-            IconButton(
-              icon: const Icon(Icons.replay),
-              onPressed: _loading ? null : _replay,
-            ),
-
-            IconButton(
-              icon: const Icon(Icons.replay_10),
-              onPressed: _loading ? null : () => _skip(-15),
-            ),
-
-            IconButton(
-              iconSize: 40,
-              icon: Icon(
-                _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
-                color: primary,
+  // Widget helper pour les boutons de contrôle
+  Widget _buildControlButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback? onPressed,
+    required String tooltip,
+    double size = 40,
+    Color? backgroundColor,
+    bool isActive = false,
+  }) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: backgroundColor ?? Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: isActive
+            ? Border.all(color: color, width: 2)
+            : Border.all(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                width: 1,
               ),
-              onPressed: _loading ? null : _togglePlay,
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: color.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onPressed,
+          child: Tooltip(
+            message: tooltip,
+            child: Center(
+              child: Icon(
+                icon,
+                color: color,
+                size: size * 0.55,
+              ),
             ),
-
-            IconButton(
-              icon: const Icon(Icons.forward_10),
-              onPressed: _loading ? null : () => _skip(15),
-            ),
-          ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }
