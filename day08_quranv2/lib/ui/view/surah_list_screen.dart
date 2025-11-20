@@ -4,6 +4,8 @@ import 'package:dio/dio.dart';
 
 import 'package:day08_quranv2/data/models/surah_models.dart';
 import 'package:day08_quranv2/data/service/quran_service.dart';
+import 'package:day08_quranv2/data/service/favorites_service.dart';
+import 'package:day08_quranv2/data/models/favorites_models.dart';
 
 /// Map simplifiée : surahNo -> numéro du Juz où commence la sourate
 /// (assez bon pour l’UI, pas un outil de fiqh).
@@ -170,6 +172,7 @@ class SurahListScreen extends StatefulWidget {
 
 class _SurahListScreenState extends State<SurahListScreen> {
   late final QuranService _service;
+  late final FavoritesService _favoritesService;
   late Future<List<SurahSummary>> _future;
 
   // Variables pour la recherche
@@ -179,10 +182,15 @@ class _SurahListScreenState extends State<SurahListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
 
+  // Variables pour les favoris
+  Set<int> _favoriteSurahs = {};
+  bool _showFavoritesOnly = false;
+
   @override
   void initState() {
     super.initState();
     _service = QuranService(Dio());
+    _favoritesService = FavoritesService();
     _future = _service.getAllSurah();
 
     // Initialiser la liste complète après le chargement
@@ -192,8 +200,115 @@ class _SurahListScreenState extends State<SurahListScreen> {
           _allSurahs = surahs;
           _filteredSurahs = surahs;
         });
+        _loadFavorites();
       }
     });
+  }
+
+  // Charger les favoris
+  Future<void> _loadFavorites() async {
+    final favoriteSurahs = await _favoritesService.getAllFavoriteSurahs();
+    if (mounted) {
+      setState(() {
+        _favoriteSurahs = favoriteSurahs.map((fav) => fav.surahNo).toSet();
+      });
+    }
+  }
+
+  // Ajouter/retirer des favoris
+  Future<void> _toggleFavorite(SurahSummary surah) async {
+    final surahNo = surah.surahNo;
+    bool success;
+
+    if (_favoriteSurahs.contains(surahNo)) {
+      success = await _favoritesService.removeFavoriteSurah(surahNo);
+      if (success && mounted) {
+        setState(() {
+          _favoriteSurahs.remove(surahNo);
+        });
+        _showSnackBar('تمت إزالة السورة من المفضلة', false);
+      }
+    } else {
+      success = await _favoritesService.addFavoriteSurah(
+        surahNo: surahNo,
+        surahName: surah.surahName,
+        surahNameArabic: surah.surahNameArabicLong,
+        category: FavoriteCategory.daily,
+      );
+      if (success && mounted) {
+        setState(() {
+          _favoriteSurahs.add(surahNo);
+        });
+        _showSnackBar('تمت إضافة السورة إلى المفضلة', true);
+      }
+    }
+
+    if (!success && mounted) {
+      _showSnackBar('حدث خطأ أثناء تحديث المفضلة', false);
+    }
+  }
+
+  // Afficher un message
+  void _showSnackBar(String message, bool isSuccess) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isSuccess
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // Basculer l'affichage des favoris
+  void _toggleFavoritesOnly() {
+    setState(() {
+      _showFavoritesOnly = !_showFavoritesOnly;
+      if (_showFavoritesOnly) {
+        _filteredSurahs = _allSurahs
+            .where((surah) => _favoriteSurahs.contains(surah.surahNo))
+            .toList();
+      } else {
+        _filterSurahs(_searchController.text);
+      }
+    });
+  }
+
+  // Afficher le dialogue de confirmation pour effacer les favoris
+  void _showClearFavoritesDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('مسح المفضلات'),
+        content: const Text('هل أنت متأكد من رغبتك في مسح جميع المفضلات؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              final success = await _favoritesService.clearAllFavoriteSurahs();
+              if (success && mounted) {
+                setState(() {
+                  _favoriteSurahs.clear();
+                  if (_showFavoritesOnly) {
+                    _filteredSurahs = [];
+                  }
+                });
+                _showSnackBar('تم مسح جميع المفضلات', true);
+              } else if (mounted) {
+                _showSnackBar('حدث خطأ أثناء مسح المفضلات', false);
+              }
+            },
+            child: const Text('مسح', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -327,13 +442,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
               icon: Icon(_isSearching ? Icons.close : Icons.search),
               onPressed: _toggleSearch,
             ),
-            if (!_isSearching)
-              IconButton(
-                icon: const Icon(Icons.bookmark_border),
-                onPressed: () {
-                  // TODO: Implement favorites functionality
-                },
-              ),
           ],
         ),
         body: FutureBuilder<List<SurahSummary>>(
@@ -639,6 +747,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                             surah: surah,
                             isHighlighted:
                                 surahNo == 1, // par ex. Fatiha en vert
+                            isFavorite: _favoriteSurahs.contains(surahNo),
                             onTap: () {
                               Navigator.of(context).push(
                                 PageRouteBuilder(
@@ -664,6 +773,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                                 ),
                               );
                             },
+                            onFavoriteToggle: () => _toggleFavorite(surah),
                           ),
                           if (index < displaySurahs.length - 1)
                             Padding(
@@ -698,12 +808,16 @@ class _SurahListScreenState extends State<SurahListScreen> {
 class _ModernSurahRow extends StatelessWidget {
   final SurahSummary surah;
   final bool isHighlighted;
+  final bool isFavorite;
   final VoidCallback onTap;
+  final VoidCallback onFavoriteToggle;
 
   const _ModernSurahRow({
     required this.surah,
     required this.isHighlighted,
+    required this.isFavorite,
     required this.onTap,
+    required this.onFavoriteToggle,
   });
 
   @override
@@ -844,18 +958,44 @@ class _ModernSurahRow extends StatelessWidget {
                   ),
                 ),
 
-                // Icône de lecture
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.play_arrow_rounded,
-                    color: colorScheme.primary,
-                    size: 24,
-                  ),
+                // Favorite and play buttons
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Favorite button
+                    GestureDetector(
+                      onTap: onFavoriteToggle,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isFavorite
+                              ? Colors.amber.withOpacity(0.2)
+                              : colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          isFavorite ? Icons.bookmark : Icons.bookmark_border,
+                          color:
+                              isFavorite ? Colors.amber : colorScheme.primary,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Play button
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.play_arrow_rounded,
+                        color: colorScheme.primary,
+                        size: 24,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:day08_quranv2/ui/view/surah_list_screen.dart';
+import 'package:day08_quranv2/ui/view/home_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:day08_quranv2/data/service/quran_service.dart';
 import 'package:day08_quranv2/bloc/quran_audio/quran_audio_bloc.dart';
@@ -167,7 +167,7 @@ class MyApp extends StatelessWidget {
           theme: QuranTheme.lightTheme,
           darkTheme: QuranTheme.darkTheme,
           themeMode: ThemeMode.system,
-          home: SurahListScreen(),
+          home: const HomeScreen(),
         ),
       ),
     );

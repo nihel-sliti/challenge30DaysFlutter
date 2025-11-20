@@ -4,6 +4,7 @@ import 'package:day08_quranv2/data/models/repeat_settings.dart';
 import 'package:day08_quranv2/data/service/quran_service.dart';
 import 'package:day08_quranv2/ui/components/quran_play.dart';
 import 'package:day08_quranv2/ui/components/repeat_settings_panel.dart';
+import 'package:day08_quranv2/ui/components/bookmark_widget.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
@@ -850,7 +851,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
                                     const SizedBox(width: 8),
 
-                                    // Bouton de favori
+                                    // Bouton de favori avec BookmarkWidget
                                     Container(
                                       decoration: BoxDecoration(
                                         color: theme.colorScheme.surface,
@@ -861,17 +862,15 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                           width: 1,
                                         ),
                                       ),
-                                      child: IconButton(
-                                        icon: Icon(
-                                          Icons.bookmark_border,
-                                          color: theme.colorScheme.onSurface
-                                              .withOpacity(0.7),
-                                          size: 20,
-                                        ),
-                                        onPressed: () {
-                                          // TODO: Implement bookmark functionality
+                                      child: BookmarkWidget(
+                                        surahNo: detail.surahNo,
+                                        ayahNo: index + 1,
+                                        ayahText: verseText,
+                                        surahName: detail.surahNameArabicLong,
+                                        onBookmarkChanged: () {
+                                          // Refresh the UI when bookmark changes
+                                          setState(() {});
                                         },
-                                        tooltip: "حفظ",
                                       ),
                                     ),
 
