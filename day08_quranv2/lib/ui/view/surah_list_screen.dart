@@ -421,14 +421,6 @@ class _SurahListScreenState extends State<SurahListScreen> {
               ? _buildSearchField()
               : Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.menu_book, size: 24),
-                    ),
                     const SizedBox(width: 12),
                     const Text(
                       'القرآن الكريم',
@@ -982,19 +974,6 @@ class _ModernSurahRow extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Play button
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.play_arrow_rounded,
-                        color: colorScheme.primary,
-                        size: 24,
-                      ),
-                    ),
                   ],
                 ),
               ],

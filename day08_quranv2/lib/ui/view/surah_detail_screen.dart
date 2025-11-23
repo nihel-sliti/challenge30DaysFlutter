@@ -5,6 +5,9 @@ import 'package:day08_quranv2/data/service/quran_service.dart';
 import 'package:day08_quranv2/ui/components/quran_play.dart';
 import 'package:day08_quranv2/ui/components/repeat_settings_panel.dart';
 import 'package:day08_quranv2/ui/components/bookmark_widget.dart';
+import 'package:day08_quranv2/data/models/favorites_models.dart';
+import 'package:day08_quranv2/data/service/favorites_service.dart';
+import 'package:day08_quranv2/data/service/download_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
@@ -23,6 +26,10 @@ class SurahDetailScreen extends StatefulWidget {
 class _SurahDetailScreenState extends State<SurahDetailScreen> {
   final QuranService _service = QuranService(Dio());
   final AudioPlayer _ayahPlayer = AudioPlayer();
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _listKey = GlobalKey();
+  final FavoritesService _favoritesService = FavoritesService();
+  final DownloadService _downloadService = DownloadService();
 
   late Future<SurahDetail> _detailFuture;
   SurahDetail? _currentDetail;
@@ -43,7 +50,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
   final Map<int, Map<int, AudioReciter>> _ayahAudioCache = {};
 
-  // 🔹 Réglages de répétition (sauvegardés sur l’écran)
+  // 🔹 État des téléchargements
+  final Set<String> _downloadingFiles = <String>{};
+  final Map<String, double> _downloadProgress = <String, double>{};
+  final Set<String> _downloadedFiles = <String>{};
+
+  // 🔹 Réglages de répétition (sauvegardés sur l'écran)
   RepeatSettings _repeatSettings = RepeatSettings(
     fromAyah: 1,
     toAyah: 1,
@@ -57,6 +69,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
   void initState() {
     super.initState();
     _detailFuture = _service.getSurahDetail(widget.surahNo);
+    _initializeDownloadedFiles();
 
     _ayahPlayer.onPlayerComplete.listen((_) async {
       if (!mounted) return;
@@ -79,7 +92,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         return;
       }
 
-      // 1) Répétition d’ayah
+      // 1) Répétition d'ayah
       if (_repeatSettings.ayahRepeatEnabled && _ayahRepeatsLeft > 1) {
         setState(() {
           _ayahRepeatsLeft -= 1;
@@ -127,9 +140,226 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     });
   }
 
+  /// Initialiser la liste des fichiers déjà téléchargés
+  Future<void> _initializeDownloadedFiles() async {
+    try {
+      // Vérifier les fichiers de sourate et d'ayah pour le récitateur actuel
+      final reciterId = _selectedReciterKey ?? 1;
+      final surahFileName = 'surah_${widget.surahNo}_reciter_$reciterId.mp3';
+
+      final isSurahDownloaded =
+          await _downloadService.isAudioDownloaded(surahFileName);
+
+      if (isSurahDownloaded) {
+        setState(() {
+          _downloadedFiles.add(surahFileName);
+        });
+      }
+
+      // Vérifier quelques ayahs pour optimiser
+      for (int i = 1; i <= 5 && i <= 286; i++) {
+        // Maximum 286 ayahs dans le Coran
+        final ayahFileName =
+            'surah_${widget.surahNo}/ayah_${i}_reciter_$reciterId.mp3';
+        final isAyahDownloaded =
+            await _downloadService.isAudioDownloaded(ayahFileName);
+        if (isAyahDownloaded) {
+          setState(() {
+            _downloadedFiles.add(ayahFileName);
+          });
+        }
+      }
+    } catch (e) {
+      print('Error initializing downloaded files: $e');
+    }
+  }
+
+  /// Vérifier si un ayah est téléchargé localement
+  Future<bool> _isAyahDownloaded(int ayahNo, int reciterId) async {
+    final fileName =
+        'surah_${widget.surahNo}/ayah_${ayahNo}_reciter_$reciterId.mp3';
+    return _downloadedFiles.contains(fileName) ||
+        await _downloadService.isAudioDownloaded(fileName);
+  }
+
+  /// Vérifier si la sourate est téléchargée localement
+  Future<bool> _isSurahDownloaded(int reciterId) async {
+    final fileName = 'surah_${widget.surahNo}_reciter_$reciterId.mp3';
+    return _downloadedFiles.contains(fileName) ||
+        await _downloadService.isAudioDownloaded(fileName);
+  }
+
+  /// Obtenir le chemin du fichier audio local pour un ayah
+  Future<String?> _getAyahLocalPath(int ayahNo, int reciterId) async {
+    final fileName =
+        'surah_${widget.surahNo}/ayah_${ayahNo}_reciter_$reciterId.mp3';
+    return await _downloadService.getLocalAudioPath(fileName);
+  }
+
+  /// Obtenir le chemin du fichier audio local pour la sourate
+  Future<String?> _getSurahLocalPath(int reciterId) async {
+    final fileName = 'surah_${widget.surahNo}_reciter_$reciterId.mp3';
+    return await _downloadService.getLocalAudioPath(fileName);
+  }
+
+  /// Télécharger un ayah avec progression
+  Future<void> _downloadAyahWithProgress(
+    SurahDetail detail,
+    int ayahNo,
+    String ayahText,
+  ) async {
+    final reciterId = _selectedReciterKey ?? 1;
+    final fileName =
+        'surah_${widget.surahNo}/ayah_${ayahNo}_reciter_$reciterId.mp3';
+
+    if (_downloadingFiles.contains(fileName)) return;
+
+    setState(() {
+      _downloadingFiles.add(fileName);
+      _downloadProgress[fileName] = 0.0;
+    });
+
+    try {
+      // Construire l'URL pour l'ayah spécifique
+      final audioUrl =
+          'https://the-quran-project.github.io/Quran-Audio/Data/${detail.surahNo}/${ayahNo}_2.mp3';
+
+      final file = await _downloadService.downloadAudio(
+        url: audioUrl,
+        fileName: fileName,
+        onProgress: (progress) {
+          setState(() {
+            _downloadProgress[fileName] = progress;
+          });
+        },
+      );
+
+      if (file != null) {
+        setState(() {
+          _downloadedFiles.add(fileName);
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.download_done, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text('تم تحميل الآية $ayahNo بنجاح'),
+                ],
+              ),
+              backgroundColor: Colors.green.shade600,
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('فشل تحميل الآية: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _downloadingFiles.remove(fileName);
+        _downloadProgress.remove(fileName);
+      });
+    }
+  }
+
+  /// Télécharger la sourate complète avec progression
+  Future<void> _downloadSurahWithProgress(SurahDetail detail) async {
+    final reciterId = _selectedReciterKey ?? 1;
+    final fileName = 'surah_${widget.surahNo}_reciter_$reciterId.mp3';
+
+    if (_downloadingFiles.contains(fileName)) return;
+
+    setState(() {
+      _downloadingFiles.add(fileName);
+      _downloadProgress[fileName] = 0.0;
+    });
+
+    try {
+      // Construire l'URL pour la sourate complète
+      final surahNumber = detail.surahNo.toString().padLeft(3, '0');
+      final audioUrl =
+          'https://download.quranicaudio.com/quran/abdul_basit_abdus_samad_192kbps/$surahNumber.mp3';
+
+      final file = await _downloadService.downloadAudio(
+        url: audioUrl,
+        fileName: fileName,
+        onProgress: (progress) {
+          setState(() {
+            _downloadProgress[fileName] = progress;
+          });
+        },
+      );
+
+      if (file != null) {
+        setState(() {
+          _downloadedFiles.add(fileName);
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.download_done, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text('تم تحميل سورة ${detail.surahNameArabicLong} بنجاح'),
+                ],
+              ),
+              backgroundColor: Colors.green.shade600,
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('فشل تحميل السورة: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _downloadingFiles.remove(fileName);
+        _downloadProgress.remove(fileName);
+      });
+    }
+  }
+
   @override
   void dispose() {
     _ayahPlayer.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -150,6 +380,25 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
+  // Method to scroll to a specific ayah
+  Future<void> _scrollToAyah(int index) async {
+    // Wait a bit for UI to update
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    if (_scrollController.hasClients) {
+      // Calculate approximate position (each ayah item is roughly 200px tall)
+      final double estimatedPosition = index * 200.0;
+      final double maxScroll = _scrollController.position.maxScrollExtent;
+      final double targetPosition = estimatedPosition.clamp(0.0, maxScroll);
+
+      await _scrollController.animateTo(
+        targetPosition,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
   Future<void> _playAyah(
     SurahDetail detail,
     int index, {
@@ -165,26 +414,40 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
       _currentDetail = detail;
     });
 
+    // Scroll to ayah when it starts playing
+    _scrollToAyah(index);
+
     try {
-      Map<int, AudioReciter>? audioMap = _ayahAudioCache[ayahNo];
+      final reciterId = _selectedReciterKey ?? 1;
 
-      if (audioMap == null) {
-        audioMap = await _service.getAyahAudio(detail.surahNo, ayahNo);
-        if (audioMap.isEmpty) {
-          throw Exception('Aucun audio trouvé pour ce verset.');
+      // 🔹 PRIORITÉ: Vérifier d'abord si le fichier local existe
+      final localPath = await _getAyahLocalPath(ayahNo, reciterId);
+      if (localPath != null) {
+        // Utiliser le fichier local
+        await _ayahPlayer.stop();
+        await _ayahPlayer.play(DeviceFileSource(localPath));
+      } else {
+        // 🔹 FALLBACK: Utiliser l'URL distante
+        Map<int, AudioReciter>? audioMap = _ayahAudioCache[ayahNo];
+
+        if (audioMap == null) {
+          audioMap = await _service.getAyahAudio(detail.surahNo, ayahNo);
+          if (audioMap.isEmpty) {
+            throw Exception('Aucun audio trouvé pour ce verset.');
+          }
+          _ayahAudioCache[ayahNo] = audioMap;
         }
-        _ayahAudioCache[ayahNo] = audioMap;
+
+        final reciterKey = _selectedReciterKey ?? audioMap.keys.first;
+        final reciter = audioMap[reciterKey] ?? audioMap.values.first;
+
+        await _ayahPlayer.stop();
+        await _ayahPlayer.play(
+          UrlSource(
+            reciter.originalUrl.isNotEmpty ? reciter.originalUrl : reciter.url,
+          ),
+        );
       }
-
-      final reciterKey = _selectedReciterKey ?? audioMap.keys.first;
-      final reciter = audioMap[reciterKey] ?? audioMap.values.first;
-
-      await _ayahPlayer.stop();
-      await _ayahPlayer.play(
-        UrlSource(
-          reciter.originalUrl.isNotEmpty ? reciter.originalUrl : reciter.url,
-        ),
-      );
     } catch (e) {
       setState(() {
         _ayahError = e.toString();
@@ -210,6 +473,276 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
+  /// 🔹 Télécharger un ayah spécifique (ancienne méthode pour compatibilité)
+  Future<void> _downloadAyah(
+      SurahDetail detail, int ayahNo, String ayahText) async {
+    try {
+      // Afficher un indicateur de chargement
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('جاري تحميل الآية $ayahNo...'),
+              ],
+            ),
+            backgroundColor: Colors.blue.shade600,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      final reciterId = _selectedReciterKey ?? 1;
+      final filePath = await _downloadService.downloadAyahAudio(
+        detail.surahNo,
+        ayahNo,
+        reciterId: reciterId,
+      );
+
+      if (mounted && filePath != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.download_done, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('تم تحميل الآية $ayahNo بنجاح'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('فشل تحميل الآية: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 🔹 Télécharger la sourate complète (ancienne méthode pour compatibilité)
+  Future<void> _downloadSurah(SurahDetail detail) async {
+    try {
+      // Afficher un indicateur de chargement
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text('جاري تحميل سورة ${detail.surahNameArabicLong}...'),
+              ],
+            ),
+            backgroundColor: Colors.blue.shade600,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      final reciterId = _selectedReciterKey ?? 1;
+      final filePath = await _downloadService.downloadSurahAudio(
+        detail.surahNo,
+        detail.surahNameArabicLong,
+        reciterId: reciterId,
+      );
+
+      if (mounted && filePath != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.download_done, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('تم تحميل سورة ${detail.surahNameArabicLong} بنجاح'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade600,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('فشل تحميل السورة: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 🔹 Partager un ayah
+  Future<void> _shareAyah(String ayahText, int surahNo, int ayahNo) async {
+    try {
+      await _downloadService.shareAyah(ayahText, surahNo, ayahNo);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('فشل المشاركة: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 🔹 Vérifier la connectivité et afficher un message si hors-ligne
+  Future<bool> _checkConnectivityAndShowMessage() async {
+    try {
+      // Simuler une vérification de connectivité simple
+      // En production, vous pourriez utiliser connectivity_plus ou une autre méthode
+      final hasConnection = await _hasInternetConnection();
+
+      if (!hasConnection) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.wifi_off, color: Colors.white),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'لا يوجد اتصال بالإنترنت. يرجى التحقق من اتصالك والمحاولة مرة أخرى.',
+                      style: TextStyle(fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.orange.shade600,
+              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'حسناً',
+                textColor: Colors.white,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                },
+              ),
+            ),
+          );
+        }
+        return false;
+      }
+      return true;
+    } catch (e) {
+      // En cas d'erreur lors de la vérification, supposer qu'il y a une connexion
+      return true;
+    }
+  }
+
+  /// 🔹 Vérification simple de la connectivité Internet
+  Future<bool> _hasInternetConnection() async {
+    try {
+      // Tenter une connexion simple vers un service fiable
+      // C'est une méthode basique - en production, utilisez une solution plus robuste
+      final dio = Dio();
+      dio.options.connectTimeout = const Duration(seconds: 5);
+      dio.options.receiveTimeout = const Duration(seconds: 3);
+      dio.options.sendTimeout = const Duration(seconds: 5);
+
+      final response = await dio.get('https://httpbin.org/json');
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// 🔹 Afficher un message si pas de fichier local et pas de connexion
+  void _showOfflineMessage(int ayahNo) {
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.wifi_off, color: Colors.orange.shade600),
+                const SizedBox(width: 8),
+                const Text('وضع عدم الاتصال'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'الآية $ayahNo غير متاحة للعرض حالياً.',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'يرجى تنزيل الآية أثناء الاتصال بالإنترنت لتتمكن من الاستماع إليها في وضع عدم الاتصال.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('حسناً'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  }
+
   /// 🔹 Appliquer _repeatSettings sur la lecture "Lire toute la sourate (verset par verset)"
   Future<void> _startSequential(SurahDetail detail) async {
     final total = _getVerses(detail).length;
@@ -229,7 +762,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     await _playAyah(detail, start, sequential: true);
   }
 
-  /// 🔹 Ouvrir le panneau et mettre à jour _repeatSettings quand l’utilisateur change les valeurs
+  /// 🔹 Ouvrir le panneau et mettre à jour _repeatSettings quand l'utilisateur change les valeurs
   void _openRepeatSettings(SurahDetail detail) {
     showModalBottomSheet(
       context: context,
@@ -244,13 +777,90 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             totalAyah: detail.totalAyah,
             initial: _repeatSettings,
             onChanged: (value) {
-              // ici on SAUVEGARDE les settings dans l’écran
+              // ici on SAUVEGARDE les settings dans l'écran
               setState(() => _repeatSettings = value);
             },
           ),
         );
       },
     );
+  }
+
+  /// 🔹 Ajouter la sourate aux favoris avec snackbar
+  Future<void> _toggleSurahFavorite(SurahDetail detail) async {
+    try {
+      final isFavorited =
+          await _favoritesService.isSurahFavorited(detail.surahNo);
+
+      if (isFavorited) {
+        // Retirer des favoris
+        final success =
+            await _favoritesService.removeFavoriteSurah(detail.surahNo);
+
+        if (success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.bookmark_remove, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text('${detail.surahNameArabicLong} retirée des favoris'),
+                  ],
+                ),
+                backgroundColor: Colors.orange.shade600,
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      } else {
+        // Ajouter aux favoris
+        final success = await _favoritesService.addFavoriteSurah(
+          surahNo: detail.surahNo,
+          surahName: detail.surahName,
+          surahNameArabic: detail.surahNameArabicLong,
+          category: FavoriteCategory.daily,
+        );
+
+        if (success) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(Icons.bookmark_added, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text('${detail.surahNameArabicLong} ajoutée aux favoris'),
+                  ],
+                ),
+                backgroundColor: Colors.green.shade600,
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Erreur: ${e.toString()}'),
+              ],
+            ),
+            backgroundColor: Colors.red.shade600,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -263,37 +873,40 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
         elevation: 0,
         backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+        titleSpacing: 0,
+        automaticallyImplyLeading: false,
+        title: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Row(
+            children: [
+              // Flèche de retour à droite
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
               ),
-              child: const Icon(Icons.auto_stories, size: 20),
-            ),
-            const SizedBox(width: 8),
-            Text('سورة ${widget.surahNo}'),
-          ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'سورة ${_currentDetail?.surahName ?? ''}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.repeat, color: Colors.white),
+                onPressed: () {
+                  final detail = _currentDetail;
+                  if (detail != null) {
+                    _openRepeatSettings(detail);
+                  }
+                },
+              ),
+            ],
+          ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.repeat),
-            onPressed: () {
-              final detail = _currentDetail;
-              if (detail != null) {
-                _openRepeatSettings(detail);
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.bookmark_border),
-            onPressed: () {
-              // TODO: Implement bookmark functionality
-            },
-          ),
-        ],
       ),
       body: FutureBuilder<SurahDetail>(
         future: _detailFuture,
@@ -501,6 +1114,14 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                       ),
                                     ),
                                   ),
+                                  const SizedBox(width: 8),
+                                  // 🔹 Bouton de téléchargement de la sourate avec indicateur
+                                  _buildDownloadButton(
+                                    detail: detail,
+                                    isSurah: true,
+                                    onPressed: () =>
+                                        _downloadSurahWithProgress(detail),
+                                  ),
                                 ],
                               ),
                             ],
@@ -512,7 +1133,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 ),
               ),
 
-              // LANGUE + RÉCITEUR
+              // LANGUE + RÉCITATEUR
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
@@ -568,6 +1189,8 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                         onChanged: (value) {
                           setState(() {
                             _selectedReciterKey = value;
+                            // Réinitialiser les fichiers téléchargés quand on change de récitateur
+                            _initializeDownloadedFiles();
                           });
                         },
                       ),
@@ -576,11 +1199,20 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                 ),
               ),
 
-              //  const SizedBox(height: 8),
-
-              // PLAYER GLOBAL
-              QuranPlay(
-                audioUrl: chapterAudioUrl,
+              // PLAYER GLOBAL (mis à jour pour lecture hors-ligne)
+              FutureBuilder<bool>(
+                future: _isSurahDownloaded(_selectedReciterKey ?? 1),
+                builder: (context, snapshot) {
+                  final isDownloaded = snapshot.data ?? false;
+                  return QuranPlay(
+                    audioUrl: isDownloaded
+                        ? '' // URL vide si téléchargé
+                        : chapterAudioUrl,
+                    localPath: isDownloaded
+                        ? () => _getSurahLocalPath(_selectedReciterKey ?? 1)
+                        : null,
+                  );
+                },
               ),
 
               const SizedBox(height: 8),
@@ -646,13 +1278,23 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
               // LISTE DES VERSETS MODERNE
               Expanded(
                 child: ListView.builder(
+                  key: _listKey,
+                  controller: _scrollController,
                   padding: const EdgeInsets.all(16.0),
                   itemCount: verses.length,
                   itemBuilder: (context, index) {
                     final verseText = verses[index];
                     final isPlayingThisAyah = _playingAyahIndex == index;
+                    final ayahNo = index + 1;
+                    final reciterId = _selectedReciterKey ?? 1;
+                    final fileName =
+                        'surah_${widget.surahNo}/ayah_${ayahNo}_reciter_$reciterId.mp3';
+                    final isDownloaded = _downloadedFiles.contains(fileName);
+                    final isDownloading = _downloadingFiles.contains(fileName);
+                    final progress = _downloadProgress[fileName] ?? 0.0;
 
                     return Container(
+                      key: ValueKey('ayah_$index'),
                       margin: const EdgeInsets.only(bottom: 12),
                       child: Material(
                         color: Colors.transparent,
@@ -734,7 +1376,7 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                       ),
                                       child: Center(
                                         child: Text(
-                                          '${index + 1}',
+                                          '$ayahNo',
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 16,
@@ -746,30 +1388,108 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
 
                                     const SizedBox(width: 16),
 
-                                    // Indicateur de lecture
-                                    if (isPlayingThisAyah)
+                                    // Indicateur de lecture et téléchargement
+                                    if (isPlayingThisAyah || isDownloading)
+                                      Row(
+                                        children: [
+                                          if (isPlayingThisAyah)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    theme.colorScheme.primary,
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  const Text(
+                                                    'جاري التشغيل',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          if (isDownloading)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue.shade600,
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      color: Colors.white,
+                                                      value: progress,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    '${(progress * 100).toInt()}%',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+
+                                    // Indicateur de fichier téléchargé
+                                    if (isDownloaded && !isDownloading)
                                       Container(
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: theme.colorScheme.primary,
+                                          color: Colors.green.shade600,
                                           borderRadius:
                                               BorderRadius.circular(20),
                                         ),
-                                        child: Row(
+                                        child: const Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: Colors.white,
-                                              ),
+                                            Icon(
+                                              Icons.download_done,
+                                              color: Colors.white,
+                                              size: 16,
                                             ),
-                                            const SizedBox(width: 8),
+                                            SizedBox(width: 8),
                                             const Text(
-                                              'جاري التشغيل',
+                                              'تم التحميل',
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 12,
@@ -824,6 +1544,23 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
+                                    // 🔹 Bouton de téléchargement avec état
+                                    _buildDownloadButton(
+                                      detail: detail,
+                                      ayahNo: ayahNo,
+                                      isDownloaded: isDownloaded,
+                                      isDownloading: isDownloading,
+                                      progress: progress,
+                                      onPressed: isDownloading
+                                          ? null
+                                          : isDownloaded
+                                              ? null
+                                              : () => _downloadAyahWithProgress(
+                                                  detail, ayahNo, verseText),
+                                    ),
+
+                                    const SizedBox(width: 8),
+
                                     // Bouton de partage
                                     Container(
                                       decoration: BoxDecoration(
@@ -842,10 +1579,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                               .withOpacity(0.7),
                                           size: 20,
                                         ),
-                                        onPressed: () {
-                                          // TODO: Implement share functionality
-                                        },
-                                        tooltip: "مشاركة",
+                                        onPressed: () => _shareAyah(
+                                          verseText,
+                                          detail.surahNo,
+                                          ayahNo,
+                                        ),
+                                        tooltip: "مشاركة الآية",
                                       ),
                                     ),
 
@@ -864,11 +1603,11 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
                                       ),
                                       child: BookmarkWidget(
                                         surahNo: detail.surahNo,
-                                        ayahNo: index + 1,
+                                        ayahNo: ayahNo,
                                         ayahText: verseText,
                                         surahName: detail.surahNameArabicLong,
                                         onBookmarkChanged: () {
-                                          // Refresh the UI when bookmark changes
+                                          // Refresh UI when bookmark changes
                                           setState(() {});
                                         },
                                       ),
@@ -946,6 +1685,60 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  /// Widget pour le bouton de téléchargement avec état
+  Widget _buildDownloadButton({
+    required SurahDetail detail,
+    int? ayahNo,
+    bool isSurah = false,
+    bool isDownloaded = false,
+    bool isDownloading = false,
+    double progress = 0.0,
+    VoidCallback? onPressed,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDownloaded
+            ? Colors.green.withOpacity(0.1)
+            : isDownloading
+                ? Colors.blue.withOpacity(0.1)
+                : Colors.blue.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDownloaded
+              ? Colors.green.withOpacity(0.3)
+              : isDownloading
+                  ? Colors.blue.withOpacity(0.3)
+                  : Colors.blue.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: IconButton(
+        icon: isDownloading
+            ? SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.blue.shade600,
+                  value: progress,
+                ),
+              )
+            : Icon(
+                isDownloaded ? Icons.download_done : Icons.download,
+                color:
+                    isDownloaded ? Colors.green.shade600 : Colors.blue.shade600,
+                size: isSurah ? 16 : 20,
+              ),
+        onPressed: onPressed,
+        tooltip: isSurah
+            ? "تحميل السورة"
+            : isDownloaded
+                ? "تم التحميل"
+                : "تحميل الآية",
       ),
     );
   }

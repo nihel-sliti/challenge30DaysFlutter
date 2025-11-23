@@ -6,12 +6,15 @@ class QuranPlay extends StatefulWidget {
   final String audioUrl;
   final VoidCallback? onPrevious;
   final VoidCallback? onNext;
+  final Future<String?> Function()?
+      localPath; // Ajout du paramètre pour chemin local
 
   const QuranPlay({
     super.key,
     required this.audioUrl,
     this.onPrevious,
     this.onNext,
+    this.localPath, // Ajout du paramètre optionnel
   });
 
   @override
@@ -28,41 +31,52 @@ class _QuranPlayState extends State<QuranPlay> {
   bool _loading = false;
   String? _error;
 
-  bool _loopEnabled = false; // <<< LOOP INFINI
+  bool _loopEnabled = false;
 
   @override
   void initState() {
     super.initState();
     _player = AudioPlayer();
 
-    // Durée totale
     _player.onDurationChanged.listen((d) {
       if (mounted) setState(() => _duration = d);
     });
 
-    // Position
     _player.onPositionChanged.listen((p) {
       if (mounted) setState(() => _position = p);
     });
 
-    // État play/pause
     _player.onPlayerStateChanged.listen((state) {
       if (mounted) {
         setState(() => _isPlaying = state == PlayerState.playing);
       }
     });
 
-    // <<< AUTO LOOP FIABLE (SANS TIMEOUT) >>>
     _player.onPlayerComplete.listen((_) async {
       if (_loopEnabled) {
         try {
-          await _player.stop(); // reset
-          await Future.delayed(
-              const Duration(milliseconds: 250)); // évite timeout
-          await _player.play(
-            UrlSource(widget.audioUrl),
-            position: Duration.zero,
-          );
+          await _player.stop();
+          await Future.delayed(const Duration(milliseconds: 250));
+
+          // 🔹 PRIORITÉ: Vérifier d'abord si un fichier local existe pour la boucle
+          if (widget.localPath != null) {
+            final localPath = await widget.localPath!();
+            if (localPath != null) {
+              await _player.play(
+                DeviceFileSource(localPath),
+                position: Duration.zero,
+              );
+              return;
+            }
+          }
+
+          // 🔹 FALLBACK: Utiliser l'URL distante pour la boucle
+          if (widget.audioUrl.isNotEmpty) {
+            await _player.play(
+              UrlSource(widget.audioUrl),
+              position: Duration.zero,
+            );
+          }
         } catch (e) {
           if (mounted) {
             setState(() => _error = "Loop error: $e");
@@ -97,8 +111,40 @@ class _QuranPlayState extends State<QuranPlay> {
     super.dispose();
   }
 
-  // PLAY / PAUSE
   Future<void> _togglePlay() async {
+    // 🔹 PRIORITÉ: Vérifier d'abord si un fichier local existe
+    if (widget.localPath != null) {
+      final localPath = await widget.localPath!();
+      if (localPath != null) {
+        setState(() {
+          _loading = true;
+          _error = null;
+        });
+
+        try {
+          if (_isPlaying) {
+            await _player.pause();
+          } else {
+            final startPos =
+                (_position >= _duration - const Duration(milliseconds: 300))
+                    ? Duration.zero
+                    : _position;
+
+            await _player.play(
+              DeviceFileSource(localPath),
+              position: startPos,
+            );
+          }
+        } catch (e) {
+          if (mounted) setState(() => _error = "$e");
+        } finally {
+          if (mounted) setState(() => _loading = false);
+        }
+        return;
+      }
+    }
+
+    // 🔹 FALLBACK: Utiliser l'URL distante si pas de fichier local
     if (widget.audioUrl.isEmpty) return;
 
     setState(() {
@@ -127,8 +173,34 @@ class _QuranPlayState extends State<QuranPlay> {
     }
   }
 
-  // REPLAY
   Future<void> _replay() async {
+    // 🔹 PRIORITÉ: Vérifier d'abord si un fichier local existe
+    if (widget.localPath != null) {
+      final localPath = await widget.localPath!();
+      if (localPath != null) {
+        setState(() {
+          _loading = true;
+          _error = null;
+        });
+
+        try {
+          await _player.stop();
+          await Future.delayed(const Duration(milliseconds: 200));
+
+          await _player.play(
+            DeviceFileSource(localPath),
+            position: Duration.zero,
+          );
+        } catch (e) {
+          setState(() => _error = "$e");
+        } finally {
+          setState(() => _loading = false);
+        }
+        return;
+      }
+    }
+
+    // 🔹 FALLBACK: Utiliser l'URL distante si pas de fichier local
     if (widget.audioUrl.isEmpty) return;
 
     setState(() {
@@ -151,7 +223,6 @@ class _QuranPlayState extends State<QuranPlay> {
     }
   }
 
-  // Skip ± secondes
   Future<void> _skip(int sec) async {
     final newPos = _position + Duration(seconds: sec);
 
@@ -186,104 +257,87 @@ class _QuranPlayState extends State<QuranPlay> {
     final current = _position.inSeconds.clamp(0, maxSec).toDouble();
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surface.withOpacity(0.95),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.15),
-          width: 1.5,
+          color: theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: theme.colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
         children: [
-          // Message d'erreur amélioré
-          if (_error != null)
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.red.withOpacity(0.2),
-                  width: 1.5,
+          // Bouton Play/Pause ultra-compact
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: primary,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: primary.withOpacity(0.25),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: _loading ? null : _togglePlay,
+                child: Center(
+                  child: _loading
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(
+                          _isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                 ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.error_outline,
-                      color: Colors.red.shade600,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _error!,
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             ),
+          ),
 
-          // Section du slider avec design amélioré
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withOpacity(0.6),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.colorScheme.outline.withOpacity(0.08),
-                width: 1,
-              ),
-            ),
+          const SizedBox(width: 8),
+
+          // Temps et slider ultra-compact
+          Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Slider avec thumb personnalisé
+                // Slider ultra-minimaliste
                 SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     activeTrackColor: primary,
                     inactiveTrackColor: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.black.withOpacity(0.1),
+                        ? Colors.white.withOpacity(0.08)
+                        : Colors.black.withOpacity(0.08),
                     thumbColor: primary,
-                    overlayColor: primary.withOpacity(0.15),
-                    trackHeight: 8,
+                    overlayColor: primary.withOpacity(0.1),
+                    trackHeight: 4,
                     thumbShape: const RoundSliderThumbShape(
-                      enabledThumbRadius: 10,
+                      enabledThumbRadius: 6,
                     ),
                     overlayShape: const RoundSliderOverlayShape(
-                      overlayRadius: 16,
+                      overlayRadius: 10,
                     ),
                   ),
                   child: Slider(
@@ -295,166 +349,88 @@ class _QuranPlayState extends State<QuranPlay> {
                         : (v) => _player.seek(Duration(seconds: v.toInt())),
                   ),
                 ),
-                const SizedBox(height: 16),
-                // Temps avec design amélioré
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            primary.withOpacity(0.15),
-                            primary.withOpacity(0.05),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
+
+                // Temps ultra-compact
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
                         _fmt(_position),
                         style: TextStyle(
                           color: primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          letterSpacing: 0.5,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
                         ),
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.colorScheme.secondary.withOpacity(0.15),
-                            theme.colorScheme.secondary.withOpacity(0.05),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
+                      Text(
                         _fmt(_duration),
                         style: TextStyle(
                           color: theme.colorScheme.secondary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          letterSpacing: 0.5,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(width: 8),
 
-          // Contrôles avec design premium
+          // Contrôles ultra-compact
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Bouton Loop
-              _buildControlButton(
+              _buildCompactButton(
                 icon: Icons.repeat,
                 color: loopColor,
                 isActive: _loopEnabled,
                 backgroundColor: _loopEnabled
-                    ? primary.withOpacity(0.15)
+                    ? primary.withOpacity(0.1)
                     : Colors.transparent,
                 onPressed: () {
                   setState(() => _loopEnabled = !_loopEnabled);
                 },
-                tooltip: "Loop infini",
-                size: 44,
+                tooltip: "Loop",
+                size: 32,
               ),
+
+              const SizedBox(width: 6),
 
               // Bouton Replay
-              _buildControlButton(
+              _buildCompactButton(
                 icon: Icons.replay,
-                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
                 onPressed: _loading ? null : _replay,
                 tooltip: "Rejouer",
-                size: 44,
+                size: 32,
               ),
+
+              const SizedBox(width: 6),
 
               // Bouton -15s
-              _buildControlButton(
+              _buildCompactButton(
                 icon: Icons.replay_10,
-                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
                 onPressed: _loading ? null : () => _skip(-15),
-                tooltip: "Reculer 15s",
-                size: 44,
+                tooltip: "-15s",
+                size: 32,
               ),
 
-              // Bouton Play/Pause agrandi et amélioré
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      primary,
-                      primary.withOpacity(0.85),
-                      primary.withOpacity(0.7),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: primary.withOpacity(0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                    if (_isPlaying)
-                      BoxShadow(
-                        color: primary.withOpacity(0.2),
-                        blurRadius: 20,
-                        spreadRadius: 2,
-                      ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: _loading ? null : _togglePlay,
-                    child: Center(
-                      child: _loading
-                          ? SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 3.5,
-                                color: Colors.white,
-                              ),
-                            )
-                          : AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              child: Icon(
-                                _isPlaying
-                                    ? Icons.pause_circle_filled
-                                    : Icons.play_circle_fill,
-                                color: Colors.white,
-                                size: 36,
-                              ),
-                            ),
-                    ),
-                  ),
-                ),
-              ),
+              const SizedBox(width: 6),
 
               // Bouton +15s
-              _buildControlButton(
+              _buildCompactButton(
                 icon: Icons.forward_10,
-                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
                 onPressed: _loading ? null : () => _skip(15),
-                tooltip: "Avancer 15s",
-                size: 44,
+                tooltip: "+15s",
+                size: 32,
               ),
             ],
           ),
@@ -463,13 +439,13 @@ class _QuranPlayState extends State<QuranPlay> {
     );
   }
 
-  // Widget helper pour les boutons de contrôle
-  Widget _buildControlButton({
+  // Bouton ultra-compact pour les contrôles
+  Widget _buildCompactButton({
     required IconData icon,
     required Color color,
     required VoidCallback? onPressed,
     required String tooltip,
-    double size = 40,
+    double size = 32,
     Color? backgroundColor,
     bool isActive = false,
   }) {
@@ -478,27 +454,18 @@ class _QuranPlayState extends State<QuranPlay> {
       height: size,
       decoration: BoxDecoration(
         color: backgroundColor ?? Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: isActive
-            ? Border.all(color: color, width: 2)
+            ? Border.all(color: color, width: 1)
             : Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.15),
                 width: 1,
               ),
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: color.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : [],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           onTap: onPressed,
           child: Tooltip(
             message: tooltip,
@@ -506,7 +473,7 @@ class _QuranPlayState extends State<QuranPlay> {
               child: Icon(
                 icon,
                 color: color,
-                size: size * 0.55,
+                size: size * 0.5,
               ),
             ),
           ),

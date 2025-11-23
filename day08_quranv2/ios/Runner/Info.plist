@@ -45,5 +45,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Permissions pour iOS -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>Cette application a besoin d'accéder aux documents pour télécharger et sauvegarder les fichiers audio du Coran</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>Cette application a besoin d'accéder aux téléchargements pour sauvegarder les fichiers audio du Coran</string>
 </dict>
 </plist>

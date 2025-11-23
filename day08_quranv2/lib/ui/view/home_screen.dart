@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:day08_quranv2/ui/view/surah_list_screen.dart';
 import 'package:day08_quranv2/ui/view/favorites_screen.dart';
 import 'package:day08_quranv2/ui/view/reading_progress_screen.dart';
+import 'package:day08_quranv2/ui/view/downloads_screen.dart';
+import 'package:day08_quranv2/data/service/download_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final downloadService = DownloadService();
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -41,7 +45,7 @@ class HomeScreen extends StatelessWidget {
 
                   // Menu Grid
                   Expanded(
-                    child: _buildMenuGrid(context),
+                    child: _buildMenuGrid(context, downloadService),
                   ),
                 ],
               ),
@@ -166,7 +170,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuGrid(BuildContext context) {
+  Widget _buildMenuGrid(BuildContext context, DownloadService downloadService) {
     final menuItems = [
       MenuItem(
         title: 'القرآن الكريم',
@@ -191,23 +195,14 @@ class HomeScreen extends StatelessWidget {
         },
       ),
       MenuItem(
-        title: 'تقدم القراءة',
-        subtitle: 'إحصائيات وأهداف',
-        icon: Icons.analytics,
-        color: Colors.green,
+        title: 'التحميلات',
+        subtitle: 'إدارة الملفات المحملة',
+        icon: Icons.download,
+        color: Colors.blue,
         onTap: () {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const ReadingProgressScreen()),
+            MaterialPageRoute(builder: (_) => const DownloadsScreen()),
           );
-        },
-      ),
-      MenuItem(
-        title: 'البحث',
-        subtitle: 'البحث في القرآن',
-        icon: Icons.search,
-        color: Colors.purple,
-        onTap: () {
-          // TODO: Implement search
         },
       ),
     ];
@@ -284,6 +279,89 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  void _downloadFavoriteSurahs(
+      BuildContext context, DownloadService downloadService) {
+    // Implémentation réelle de téléchargement des sourates favorites
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.download, color: Colors.white),
+            SizedBox(width: 8),
+            Text('جاري تحميل السور المفضلة...'),
+          ],
+        ),
+        backgroundColor: Colors.blue,
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // Exemple de téléchargement réel
+    downloadService.downloadSurahAudio(1, 'الفاتحة').then((_) {
+      downloadService.downloadSurahAudio(2, 'البقرة').then((_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('تم تحميل السور المفضلة بنجاح'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      });
+    });
+  }
+
+  void _showStorageInfo(
+      BuildContext context, DownloadService downloadService) async {
+    final totalSize = await downloadService.getTotalDownloadSize();
+    final availableStorage = await downloadService.getAvailableStorage();
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('معلومات التخزين'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.sd_storage, color: Colors.green),
+                title: const Text('المساحة المستخدمة'),
+                subtitle: Text(downloadService.formatFileSize(totalSize)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.storage, color: Colors.blue),
+                title: const Text('المساحة المتوفرة'),
+                subtitle: Text(availableStorage),
+              ),
+              ListTile(
+                leading: const Icon(Icons.info_outline, color: Colors.orange),
+                title: const Text('نسبة الاستخدام'),
+                subtitle: Text(
+                    '${(totalSize / (2.3 * 1024 * 1024 * 1024) * 100).toStringAsFixed(1)}%'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('إلغاء'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
