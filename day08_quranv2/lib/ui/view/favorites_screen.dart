@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:day08_quranv2/data/models/favorites_models.dart';
-import 'package:day08_quranv2/data/service/favorites_service.dart';
-import 'package:day08_quranv2/ui/view/surah_detail_screen.dart';
+import 'package:quran_app/data/models/favorites_models.dart';
+import 'package:quran_app/data/service/favorites_service.dart';
+import 'package:quran_app/ui/view/surah_detail_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});

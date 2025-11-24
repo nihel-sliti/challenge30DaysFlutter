@@ -1,6 +1,6 @@
 {
-    "name": "day08_quranv2",
-    "short_name": "day08_quranv2",
+    "name": "Quran App",
+    "short_name": "Quran App",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

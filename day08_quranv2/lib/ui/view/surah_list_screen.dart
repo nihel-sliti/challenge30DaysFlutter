@@ -1,11 +1,11 @@
-import 'package:day08_quranv2/ui/view/surah_detail_screen.dart';
+import 'package:quran_app/ui/view/surah_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 
-import 'package:day08_quranv2/data/models/surah_models.dart';
-import 'package:day08_quranv2/data/service/quran_service.dart';
-import 'package:day08_quranv2/data/service/favorites_service.dart';
-import 'package:day08_quranv2/data/models/favorites_models.dart';
+import 'package:quran_app/data/models/surah_models.dart';
+import 'package:quran_app/data/service/quran_service.dart';
+import 'package:quran_app/data/service/favorites_service.dart';
+import 'package:quran_app/data/models/favorites_models.dart';
 
 /// Map simplifiée : surahNo -> numéro du Juz où commence la sourate
 /// (assez bon pour l’UI, pas un outil de fiqh).

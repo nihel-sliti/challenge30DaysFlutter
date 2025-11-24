@@ -1,13 +1,13 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'package:day08_quranv2/data/models/surah_models.dart';
-import 'package:day08_quranv2/data/models/repeat_settings.dart';
-import 'package:day08_quranv2/data/service/quran_service.dart';
-import 'package:day08_quranv2/ui/components/quran_play.dart';
-import 'package:day08_quranv2/ui/components/repeat_settings_panel.dart';
-import 'package:day08_quranv2/ui/components/bookmark_widget.dart';
-import 'package:day08_quranv2/data/models/favorites_models.dart';
-import 'package:day08_quranv2/data/service/favorites_service.dart';
-import 'package:day08_quranv2/data/service/download_service.dart';
+import 'package:quran_app/data/models/surah_models.dart';
+import 'package:quran_app/data/models/repeat_settings.dart';
+import 'package:quran_app/data/service/quran_service.dart';
+import 'package:quran_app/ui/components/quran_play.dart';
+import 'package:quran_app/ui/components/repeat_settings_panel.dart';
+import 'package:quran_app/ui/components/bookmark_widget.dart';
+import 'package:quran_app/data/models/favorites_models.dart';
+import 'package:quran_app/data/service/favorites_service.dart';
+import 'package:quran_app/data/service/download_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
@@ -281,11 +281,12 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     }
   }
 
-  /// Télécharger la sourate complète avec progression
+  /// Télécharger la sourate complète avec progression depuis Quran API
   Future<void> _downloadSurahWithProgress(SurahDetail detail) async {
     final reciterId = _selectedReciterKey ?? 1;
     final fileName = 'surah_${widget.surahNo}_reciter_$reciterId.mp3';
 
+    // éviter de lancer 2 fois le même download
     if (_downloadingFiles.contains(fileName)) return;
 
     setState(() {
@@ -294,11 +295,36 @@ class _SurahDetailScreenState extends State<SurahDetailScreen> {
     });
 
     try {
-      // Construire l'URL pour la sourate complète
-      final surahNumber = detail.surahNo.toString().padLeft(3, '0');
-      final audioUrl =
-          'https://download.quranicaudio.com/quran/abdul_basit_abdus_samad_192kbps/$surahNumber.mp3';
+      // 1) Appel de l'API Quran API pour récupérer les URL audio de la sourate
+      final apiUrl =
+          'https://quranapi.pages.dev/api/audio/${detail.surahNo}.json';
 
+      final dio = Dio();
+      final response = await dio.get(apiUrl);
+
+      // Le JSON ressemble à :
+      // {
+      //   "1": { "reciter": "...", "url": "...", "originalUrl": "..." },
+      //   "2": { ... },
+      //   ...
+      // }
+      final data = response.data as Map<String, dynamic>;
+
+      final reciterKey = reciterId.toString();
+      final reciterData = data[reciterKey];
+
+      if (reciterData == null) {
+        throw Exception(
+            'Aucune entrée audio trouvée pour le réciteur $reciterKey');
+      }
+
+      // On privilégie l’originalUrl (mp3quran), sinon on prend url (GitHub)
+      final audioUrl =
+          (reciterData['originalUrl'] as String?)?.trim().isNotEmpty == true
+              ? reciterData['originalUrl'] as String
+              : reciterData['url'] as String;
+
+      // 2) Téléchargement du fichier audio choisi
       final file = await _downloadService.downloadAudio(
         url: audioUrl,
         fileName: fileName,

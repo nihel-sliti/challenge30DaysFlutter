@@ -1,6 +1,5 @@
-import 'package:day08_quranv2/data/models/repeat_settings.dart';
-import 'package:day08_quranv2/data/models/surah_models.dart';
 import 'package:flutter/material.dart';
+import 'package:quran_app/data/models/repeat_settings.dart';
 
 class RepeatSettingsPanel extends StatefulWidget {
   final int totalAyah;

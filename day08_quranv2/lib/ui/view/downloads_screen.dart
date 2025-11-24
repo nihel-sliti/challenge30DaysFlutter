@@ -1,6 +1,6 @@
-import 'package:day08_quranv2/data/service/download_service.dart';
-import 'package:day08_quranv2/ui/components/quran_play.dart';
 import 'package:flutter/material.dart';
+import 'package:quran_app/data/service/download_service.dart';
+import 'package:quran_app/ui/components/quran_play.dart';
 
 class DownloadsScreen extends StatefulWidget {
   const DownloadsScreen({super.key});

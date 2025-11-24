@@ -1,8 +1,9 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'package:day08_quranv2/data/service/quran_service.dart';
-import 'package:day08_quranv2/bloc/quran_audio/quran_audio_bloc.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:quran_app/bloc/quran_audio/quran_audio_bloc.dart';
+import 'package:quran_app/data/service/quran_service.dart';
 import 'package:provider/provider.dart';
 
 class QuranAudioProvider extends ChangeNotifier {

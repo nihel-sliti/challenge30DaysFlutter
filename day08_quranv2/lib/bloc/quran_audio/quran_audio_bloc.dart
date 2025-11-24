@@ -1,9 +1,10 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:bloc/bloc.dart';
-import 'package:day08_quranv2/data/models/repeat_settings.dart';
-import 'package:day08_quranv2/data/models/surah_models.dart';
-import 'package:day08_quranv2/data/service/quran_service.dart';
+
 import 'package:equatable/equatable.dart';
+import 'package:quran_app/data/models/repeat_settings.dart';
+import 'package:quran_app/data/models/surah_models.dart';
+import 'package:quran_app/data/service/quran_service.dart';
 
 part 'quran_audio_event.dart';
 part 'quran_audio_state.dart';

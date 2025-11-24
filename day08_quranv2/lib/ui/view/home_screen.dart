@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:day08_quranv2/ui/view/surah_list_screen.dart';
-import 'package:day08_quranv2/ui/view/favorites_screen.dart';
-import 'package:day08_quranv2/ui/view/reading_progress_screen.dart';
-import 'package:day08_quranv2/ui/view/downloads_screen.dart';
-import 'package:day08_quranv2/data/service/download_service.dart';
+import 'package:quran_app/data/service/download_service.dart';
+import 'package:quran_app/ui/view/downloads_screen.dart';
+import 'package:quran_app/ui/view/favorites_screen.dart';
+import 'package:quran_app/ui/view/surah_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -92,7 +91,7 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'القرآن الكريم',
+                'حافظ القرآن',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,

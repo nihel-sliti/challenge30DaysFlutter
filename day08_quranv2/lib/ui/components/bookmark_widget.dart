@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:day08_quranv2/data/models/favorites_models.dart';
-import 'package:day08_quranv2/data/service/bookmark_service.dart';
+import 'package:quran_app/data/models/favorites_models.dart';
+import 'package:quran_app/data/service/bookmark_service.dart';
 
 class BookmarkWidget extends StatefulWidget {
   final int surahNo;

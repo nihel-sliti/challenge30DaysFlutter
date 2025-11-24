@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:day08_quranv2/ui/view/home_screen.dart';
+import 'package:quran_app/ui/view/splash_screen.dart';
 import 'package:dio/dio.dart';
-import 'package:day08_quranv2/data/service/quran_service.dart';
-import 'package:day08_quranv2/bloc/quran_audio/quran_audio_bloc.dart';
+import 'package:quran_app/data/service/quran_service.dart';
+import 'package:quran_app/bloc/quran_audio/quran_audio_bloc.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 // Thème islamique personnalisé
@@ -163,11 +163,11 @@ class MyApp extends StatelessWidget {
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'القرآن الكريم',
+          title: 'Quran App',
           theme: QuranTheme.lightTheme,
           darkTheme: QuranTheme.darkTheme,
           themeMode: ThemeMode.system,
-          home: const HomeScreen(),
+          home: const SplashScreen(),
         ),
       ),
     );

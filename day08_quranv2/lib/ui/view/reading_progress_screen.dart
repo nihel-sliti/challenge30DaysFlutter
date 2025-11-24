@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:day08_quranv2/data/models/reading_progress_models.dart';
-import 'package:day08_quranv2/data/service/reading_progress_service.dart';
-import 'package:day08_quranv2/data/service/bookmark_service.dart';
-import 'package:day08_quranv2/data/models/favorites_models.dart';
+import 'package:quran_app/data/models/reading_progress_models.dart';
+import 'package:quran_app/data/service/bookmark_service.dart';
+import 'package:quran_app/data/models/favorites_models.dart';
+import 'package:quran_app/data/service/reading_progress_service.dart';
 
 class ReadingProgressScreen extends StatefulWidget {
   const ReadingProgressScreen({super.key});
